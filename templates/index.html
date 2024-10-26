@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <title>SMS Spam Detection</title>
+    <style> 
+    #result {
+        min-height: 2em;
+    } 
+    </style>
+</head>
+
+<body class="flex flex-col items-center justify-center min-h-screen bg-gray-50">
+
+    <h1 class="text-4xl font-semibold text-gray-800 mb-6 text-center">
+        SMS Spam Detection
+    </h1>
+
+    <div class="w-full max-w-xl p-4">
+        <textarea id="message" placeholder="Message here..." class="w-full h-40 p-4 text-gray-700 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-600 resize-none" aria-label="Message input"></textarea>
+
+        <button id="checkButton"
+            class="w-full mt-5 bg-blue-600 text-white font-semibold py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200 ease-in-out">
+            Check for Spam
+        </button>
+
+        <div id="result" class="mt-5 text-lg font-semibold text-center" aria-live="polite"></div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const messageInput = document.getElementById('message');
+            const resultDiv = document.getElementById('result');
+            const checkButton = document.getElementById('checkButton');
+
+            const displayMessage = (message, className) => {
+                resultDiv.textContent = message;
+                resultDiv.className = `mt-5 text-lg font-semibold text-center ${className}`;
+            };
+
+            const checkSpam = async () => {
+                const message = messageInput.value.trim();
+                resultDiv.textContent = '';
+
+                if (!message) {
+                    displayMessage('Please enter a message to check.', 'text-gray-600');
+                    return;
+                }
+
+                try {
+                    const response = await fetch('/check-spam', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ message })
+                    });
+
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    const result = await response.json();
+
+                    if (typeof result.prediction === 'boolean') {
+                        displayMessage(result.prediction ? 'This message is Spam' : 'This message is Not Spam', result.prediction ? 'text-red-600' : 'text-green-600');
+                    } else {
+                        displayMessage('Could not determine if the message is spam.', 'text-gray-600');
+                    }
+                } catch {
+                    displayMessage('An error occurred. Please try again later.', 'text-gray-600');
+                }
+            };
+
+            checkButton.addEventListener('click', checkSpam);
+        });
+    </script>
+</body>
+
+</html>
